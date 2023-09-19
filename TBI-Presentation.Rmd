@@ -1,0 +1,204 @@
+---
+title: "TBI Onboard Data Preliminary Results"
+author: "Yaxuan (Sean) Zhang"
+date: "2023-08-24"
+output: html_document
+---
+
+<font size="4">
+\
+• Who Rides Transit in 2022\
+• Transit Trends before and after Covid\
+• New Insights From 2022 Data\
+\
+</font>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+library(data.table)
+library(dplyr)
+library(plotly)
+library(councilR)
+library(stringr)
+library(readxl)
+# Read 2016 tbi ------
+svy_2016 <- read.csv('data/TravelBehaviorInventory2016TransitOnBoardSurvey.csv') %>% as.data.table()
+svy_2016 <- svy_2016[DATE!='Dummy Record']
+
+# Read 2022 tbi ------
+svy_2022 <- read.csv('data/OD_2022.csv') %>% as.data.table()
+
+# Format tbi data -------------
+source("R/format/d_trip_type.R")
+source("R/format/d_student.R")
+source("R/format/d_race.R")
+source("R/format/d_income.R")
+source("R/format/d_hour_from_time.R")
+source("R/format/d_gender.R")
+source("R/format/d_employment.R")
+source("R/format/d_disability.R")
+source("R/format/d_age.R")
+source("R/format/d_poverty.R")
+source("R/format/d_drive.R")
+source("R/format/d_work_location.R")
+source("R/format/d_access_mode.R")
+
+# Save matched route data--------------
+svy_2016[, Route := fcase(
+  Route == "19",
+  "CLINE",
+  rep_len(TRUE, nrow(svy_2016)),
+  Route
+)]
+
+svy_2022[, ROUTE := fcase(
+  ROUTE == "612",
+  "12",
+  ROUTE == "901",
+  "Blue",
+  ROUTE == "902",
+  "Green",
+  ROUTE == "903",
+  "Red",
+  ROUTE == "904",
+  "Orange",
+  ROUTE == "921",
+  "ALINE",
+  ROUTE == "923",
+  "CLINE",
+  rep_len(TRUE, nrow(svy_2022)),
+  ROUTE
+)]
+
+svy_2016 <- svy_2016[Route %in% unique(svy_2022$ROUTE)]  #120 routes matched
+svy_2022p <- svy_2022[ROUTE %in% unique(svy_2016$Route)]  #120 routes matched
+
+# Read and format acs data ------
+source("R/format/d_ACS.R")
+# Table funs ----
+source("R/format/fun_gettable.R")
+# Fonts ----
+library(sysfonts)
+library(showtext)
+
+font_add("HelveticaNeueLT Std Lt", "Font/HelveticaNeueLTStd-Lt.otf")
+font_add( "HelveticaNeueLT Std Cn", "Font/HelveticaNeueLTStd-MdCn.otf")
+font_add("Arial Narrow", "Font/ARIALN.ttf")
+font_add("Arial Narrow Italic",
+         regular = "Font/ARIALN.ttf",
+         italic = "Font/ARIALNI.ttf")
+showtext::showtext_auto()
+
+```
+
+### Who Rides Transit in 2022?
+
+ <font size="4"> We explore demographic characteristics of public transit users (136 routes in total) in 2022. We also compare the demographic distribution to the general population distribution from American Community Survey (ACS).\
+ </font>
+ 
+#### **by Gender**
+```{r fig_gender, echo=FALSE}
+source("R/figure/fig_gender.R")
+fig
+```
+
+#### **by Disability**
+```{r fig_disability, echo=FALSE}
+source("R/figure/fig_disability.R")
+fig
+```
+#### **by Household Income/ Poverty Level**
+```{r fig_poverty, echo=FALSE}
+source("R/figure/fig_poverty.R")
+fig
+```
+
+#### **by Vehicle Ownership**
+```{r fig_car, echo=FALSE}
+source("R/figure/fig_car.R")
+fig
+```
+#### **by Race**
+```{r fig_race, echo=FALSE, fig.dim = c(8, 7.2)}
+source("R/figure/fig_race.R")
+fig
+```
+#### **by Age**
+```{r fig_age, echo=FALSE}
+source("R/figure/fig_age.R")
+fig
+```
+
+#### **by Employment**
+```{r fig_employment, echo=FALSE}
+source("R/figure/fig_employment.R")
+fig
+```
+### Transit Trends before and after Covid
+
+<font size="4"> We compare trips with same routes (120 routes in total) in 2016 and 2022. 
+The results show that of the 317,393 daily trips taken on these routes in 2016. 141,948 trips, or 45%, were retained in 2022.\
+</font>
+
+#### **Trips lost and retained: by Gender**
+```{r fig_gender_retain, echo=FALSE}
+source("R/figure/fig_gender_retain.R")
+fig
+```
+#### **Trips lost and retained: by Gender & Employment**
+```{r fig_gender_x_employment_retain, echo=FALSE}
+source("R/figure/fig_gender_x_employment_retain.R")
+fig
+```
+
+#### **Trips lost and retained: by Trip type**
+```{r fig_trip_type_retain, echo=FALSE}
+source("R/figure/fig_trip_type_retain.R")
+fig
+```
+#### **Trips lost and retained: by Gender & Trip Type**
+```{r fig_gender_x_trip_type_retain, echo=FALSE}
+source("R/figure/fig_gender_x_trip_type_retain.R")
+fig
+```
+#### **Trips lost and retained: by Disability & Age**
+```{r fig_age_x_disability_retain, echo=FALSE}
+source("R/figure/fig_age_x_disability_retain.R")
+fig
+```
+
+#### **Trips lost and retained: by Household Income & Student**
+```{r fig_income_x_student_retain, echo=FALSE}
+source("R/figure/fig_income_x_student_retain.R")
+fig
+```
+### New Insights From 2022 Data
+#### **More comprehensive gender definition** 
+```{r fig_gender_new_categories, echo=FALSE}
+source("R/figure/fig_gender_new_categories.R")
+fig
+```
+
+#### **Why do different gender groups travel?**
+```{r fig_gender_trip_type_new, echo=FALSE}
+source("R/figure/fig_gender_trip_type_new.R")
+fig
+```
+
+#### **When do different gender groups travel during the day?**
+```{r fig_gender_trip_time, echo=FALSE}
+source("R/figure/fig_gender_trip_time.R")
+fig
+```
+
+#### **Alternate Mode **
+```{r fig_drive_trip_type, echo=FALSE}
+source("R/figure/fig_drive_trip_type.R")
+fig
+```
+#### **How people travel in work-from-home era**
+```{r fig_work_trip_type, echo=FALSE}
+source("R/figure/fig_work_trip_type.R")
+fig
+```
+
